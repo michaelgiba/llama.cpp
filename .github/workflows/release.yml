@@ -256,6 +256,25 @@ jobs:
           key: ubuntu-22-cmake-cuda
           evict-old-files: 1d
 
+      - name: Free up disk space
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          echo "Listing 100 largest packages"
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
+          df -h
+          echo "Removing large packages"
+          sudo apt-get remove -y '^ghc-8.*'
+          sudo apt-get remove -y '^dotnet-.*'
+          sudo apt-get remove -y '^llvm-.*'
+          sudo apt-get remove -y 'php.*'
+          sudo apt-get remove -y azure-cli google-cloud-sdk hhvm google-chrome-stable firefox powershell mono-devel
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          df -h
+          echo "Removing large directories"
+          rm -rf /usr/share/dotnet/
+          df -h    
+
       - name: Install CUDA Toolkit
         uses: Jimver/cuda-toolkit@v0.2.26
         with:
