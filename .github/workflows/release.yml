@@ -273,7 +273,7 @@ jobs:
           df -h
           echo "Removing large directories"
           rm -rf /usr/share/dotnet/
-          df -h    
+          df -h
 
       - name: Dependencies
         id: depends
@@ -284,7 +284,7 @@ jobs:
       - name: Install CUDA Toolkit
         uses: Jimver/cuda-toolkit@v0.2.26
         with:
-          cuda: '12.1.1' 
+          cuda: '12.1.1'
 
       - name: Build
         id: cmake_build
@@ -295,7 +295,7 @@ jobs:
             -DGGML_BACKEND_DL=ON \
             -DGGML_NATIVE=OFF \
             -DGGML_CPU_ALL_VARIANTS=ON \
-            -DGGML_CUDA=ON \            
+            -DGGML_CUDA=ON \
             ${{ env.CMAKE_ARGS }}
           cmake --build build --config Release -j $(nproc)
 
@@ -742,6 +742,7 @@ jobs:
       - windows-hip
       - ubuntu-22-cpu
       - ubuntu-22-vulkan
+      - ubuntu-22-cuda
       - macOS-arm64
       - macOS-x64
       - ios-xcode-build
