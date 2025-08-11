@@ -275,6 +275,12 @@ jobs:
           rm -rf /usr/share/dotnet/
           df -h    
 
+      - name: Dependencies
+        id: depends
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential libcurl4-openssl-dev
+
       - name: Install CUDA Toolkit
         uses: Jimver/cuda-toolkit@v0.2.26
         with:
