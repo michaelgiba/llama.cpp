@@ -243,6 +243,10 @@ jobs:
   ubuntu-22-cuda:
     runs-on: ubuntu-22.04
 
+    strategy:
+      matrix:
+        cuda: ['12.1.1']
+
     steps:
       - name: Clone
         id: checkout
@@ -253,27 +257,14 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.16
         with:
-          key: ubuntu-22-cmake-cuda
+          key: ubuntu-22-cmake-cuda-${{ matrix.cuda }}
           evict-old-files: 1d
 
       - name: Free up disk space
-        if: ${{ runner.os == 'Linux' }}
-        run: |
-          echo "Listing 100 largest packages"
-          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
-          df -h
-          echo "Removing large packages"
-          sudo apt-get remove -y '^ghc-8.*' || true
-          sudo apt-get remove -y '^dotnet-.*' || true
-          sudo apt-get remove -y '^llvm-.*' || true
-          sudo apt-get remove -y 'php.*' || true
-          sudo apt-get remove -y azure-cli google-cloud-sdk hhvm google-chrome-stable firefox powershell mono-devel || true
-          sudo apt-get autoremove -y || true
-          sudo apt-get clean || true
-          df -h
-          echo "Removing large directories"
-          rm -rf /usr/share/dotnet/
-          df -h
+        uses: jlumbroso/free-disk-space@main
+        with:
+          android: true
+          dotnet: true
 
       - name: Dependencies
         id: depends
@@ -284,7 +275,7 @@ jobs:
       - name: Install CUDA Toolkit
         uses: Jimver/cuda-toolkit@v0.2.26
         with:
-          cuda: '12.1.1'
+          cuda: ${{ matrix.cuda }}
 
       - name: Build
         id: cmake_build
@@ -299,7 +290,6 @@ jobs:
             ${{ env.CMAKE_ARGS }}
           cmake --build build --config Release -j $(nproc)
 
-
       - name: Determine tag name
         id: tag
         uses: ./.github/actions/get-tag-name
@@ -308,13 +298,28 @@ jobs:
         id: pack_artifacts
         run: |
           cp LICENSE ./build/bin/
-          zip -r llama-${{ steps.tag.outputs.name }}-bin-ubuntu-cuda-x64.zip ./build/bin/*
+          zip -r llama-${{ steps.tag.outputs.name }}-bin-ubuntu-cuda-${{ matrix.cuda }}-x64.zip ./build/bin/*
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          path: llama-${{ steps.tag.outputs.name }}-bin-ubuntu-cuda-x64.zip
-          name: llama-bin-ubuntu-cuda-x64.zip
+          path: llama-${{ steps.tag.outputs.name }}-bin-ubuntu-cuda-${{ matrix.cuda }}-x64.zip
+          name: llama-bin-ubuntu-cuda-${{ matrix.cuda }}-x64.zip
+
+      - name: Pack CUDA runtime
+        id: pack_cuda_runtime
+        run: |
+          mkdir -p build/cuda-runtime
+          cp /usr/local/cuda/lib64/libcudart.so* build/cuda-runtime
+          cp /usr/local/cuda/lib64/libcublas.so* build/cuda-runtime
+          cp /usr/local/cuda/lib64/libcublasLt.so* build/cuda-runtime
+          zip -r cudart-llama-bin-ubuntu-cuda-${{ matrix.cuda }}-x64.zip build/cuda-runtime/*
+
+      - name: Upload CUDA runtime
+        uses: actions/upload-artifact@v4
+        with:
+          path: cudart-llama-bin-ubuntu-cuda-${{ matrix.cuda }}-x64.zip
+          name: cudart-llama-bin-ubuntu-cuda-${{ matrix.cuda }}-x64.zip
 
   windows-cpu:
     runs-on: windows-2025
