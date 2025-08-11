@@ -3467,10 +3467,11 @@ bool clip_image_preprocess(struct clip_ctx * ctx, const clip_image_u8 * img, str
         }
 
         return true;
-
+    } else {
+        GGML_ASSERT(false && "Unknown image preprocessing type");
+        return false;
     }
 
-    GGML_ASSERT(false && "Unknown image preprocessing type");
 }
 
 ggml_tensor * clip_get_newline_tensor(const struct clip_ctx * ctx) {
